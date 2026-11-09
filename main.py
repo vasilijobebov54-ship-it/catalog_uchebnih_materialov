@@ -7,6 +7,7 @@ materials = {
 
 def main():
     print("Каталог учебных материалов")
+    print("-" * 26)
 
     try:
         material_id = int(input("Введите ID материала: "))
