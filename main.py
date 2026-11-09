@@ -18,6 +18,7 @@ def main():
         print("Ошибка: ID должен быть целым положительным числом.")
         return
 
+    # Ищем материал по ID
     material = materials.get(material_id)
     if material is None:
         print("Материал не найден.")
