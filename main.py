@@ -8,6 +8,7 @@ materials = {
 def main():
     print("Каталог учебных материалов")
     print("-" * 30)
+    print("0 - показать все материалы")
 
     try:
         material_id = int(input("Введите ID материала: "))
@@ -15,7 +16,12 @@ def main():
         print("Ошибка: ID должен быть целым положительным числом.")
         return
 
-    if material_id <= 0:
+    if material_id == 0:
+        for item_id, item in materials.items():
+            print(f"{item_id}. {item['title']} ({item['type']})")
+        return
+
+    if material_id < 0:
         print("Ошибка: ID должен быть целым положительным числом.")
         return
 
