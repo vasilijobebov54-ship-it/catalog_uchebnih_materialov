@@ -46,6 +46,22 @@ def search_by_title():
         print("Материалы не найдены.")
 
 
+def add_material():
+    title = input("Название материала: ").strip()
+    if not title:
+        print("Название не может быть пустым.")
+        return
+
+    material_type = input("Тип материала: ").strip()
+    if not material_type:
+        print("Тип не может быть пустым.")
+        return
+
+    new_id = max(materials, default=0) + 1
+    materials[new_id] = {"title": title, "type": material_type}
+    print(f"Материал добавлен. ID: {new_id}")
+
+
 def main():
     while True:
         print("\nКаталог учебных материалов")
@@ -64,7 +80,7 @@ def main():
         elif choice == "3":
             search_by_title()
         elif choice == "4":
-            print("Функция пока в разработке.")
+            add_material()
         elif choice == "0":
             print("До свидания!")
             break
