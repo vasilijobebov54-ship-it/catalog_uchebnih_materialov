@@ -30,6 +30,22 @@ def show_by_id():
         print(f"Тип: {material['type']}")
 
 
+def search_by_title():
+    query = input("Введите название: ").strip().lower()
+    if not query:
+        print("Введите название для поиска.")
+        return
+
+    found = False
+    for item_id, item in materials.items():
+        if query in item["title"].lower():
+            print(f"{item_id}. {item['title']} ({item['type']})")
+            found = True
+
+    if not found:
+        print("Материалы не найдены.")
+
+
 def main():
     while True:
         print("\nКаталог учебных материалов")
@@ -45,7 +61,9 @@ def main():
             show_all()
         elif choice == "2":
             show_by_id()
-        elif choice in ("3", "4"):
+        elif choice == "3":
+            search_by_title()
+        elif choice == "4":
             print("Функция пока в разработке.")
         elif choice == "0":
             print("До свидания!")
