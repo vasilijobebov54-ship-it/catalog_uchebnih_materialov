@@ -62,6 +62,27 @@ def add_material():
     print(f"Материал добавлен. ID: {new_id}")
 
 
+def edit_material():
+    try:
+        material_id = int(input("Введите ID материала: "))
+    except ValueError:
+        print("Ошибка: введите целое число.")
+        return
+
+    if material_id not in materials:
+        print("Материал не найден.")
+        return
+
+    title = input("Новое название: ").strip()
+    material_type = input("Новый тип: ").strip()
+    if not title or not material_type:
+        print("Название и тип не могут быть пустыми.")
+        return
+
+    materials[material_id] = {"title": title, "type": material_type}
+    print("Материал изменён.")
+
+
 def main():
     while True:
         print("\nКаталог учебных материалов")
@@ -70,6 +91,7 @@ def main():
         print("2 - Поиск по ID")
         print("3 - Поиск по названию")
         print("4 - Добавить материал")
+        print("5 - Редактировать материал")
         print("0 - Выход")
 
         choice = input("Выберите действие: ").strip()
@@ -81,6 +103,8 @@ def main():
             search_by_title()
         elif choice == "4":
             add_material()
+        elif choice == "5":
+            edit_material()
         elif choice == "0":
             print("До свидания!")
             break
