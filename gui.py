@@ -1,6 +1,7 @@
 """Графический каталог учебных материалов (Tkinter + SQLite)."""
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+import webbrowser
+from tkinter import filedialog, messagebox, simpledialog, ttk
 
 import catalog_db as db
 
@@ -62,7 +63,9 @@ class CatalogApp:
 
         actions = ttk.Frame(area)
         actions.pack(fill="x", pady=(12, 0))
-        ttk.Button(actions, text="Добавить", command=self.add).pack(side="left", padx=(0, 7))
+        ttk.Button(actions, text="Добавить запись", command=self.add).pack(side="left", padx=(0, 7))
+        ttk.Button(actions, text="Загрузить файл", command=self.upload_file).pack(side="left", padx=5)
+        ttk.Button(actions, text="Открыть файл", command=self.open_file).pack(side="left", padx=5)
         ttk.Button(actions, text="Изменить", command=self.edit).pack(side="left", padx=7)
         ttk.Button(actions, text="Удалить", command=self.delete).pack(side="left", padx=7)
         ttk.Button(actions, text="Обновить", command=self.refresh).pack(side="left", padx=7)
@@ -111,6 +114,45 @@ class CatalogApp:
             self.refresh()
         except ValueError as error:
             messagebox.showerror("Ошибка", str(error))
+
+    def upload_file(self):
+        filename = filedialog.askopenfilename(
+            title="Выберите учебный файл",
+            filetypes=[("Учебные файлы", "*.pdf *.doc *.docx *.txt *.ppt *.pptx *.epub *.xlsx"), ("Все файлы", "*.*")]
+        )
+        if not filename:
+            return
+        from pathlib import Path
+        title = simpledialog.askstring(
+            "Загрузка файла", "Название материала:",
+            initialvalue=Path(filename).stem, parent=self.root
+        )
+        if title is None:
+            return
+        category = simpledialog.askstring(
+            "Загрузка файла", "Тип материала (книга, методичка и т.д.):",
+            initialvalue="методичка", parent=self.root
+        )
+        if category is None:
+            return
+        try:
+            db.attach_file(filename, title, category)
+            self.clear_search()
+            messagebox.showinfo("Каталог", "Файл добавлен в каталог.")
+        except (ValueError, OSError) as error:
+            messagebox.showerror("Ошибка загрузки", str(error))
+
+    def open_file(self):
+        item = self.selected()
+        if item is None:
+            return
+        path = db.get_file(int(item[0]))
+        if path is None:
+            messagebox.showinfo("Каталог", "К этому материалу файл не прикреплён.")
+        elif not path.is_file():
+            messagebox.showerror("Каталог", "Прикреплённый файл не найден.")
+        else:
+            webbrowser.open(path.resolve().as_uri())
 
     def edit(self):
         item = self.selected()

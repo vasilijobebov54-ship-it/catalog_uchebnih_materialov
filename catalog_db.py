@@ -1,10 +1,13 @@
 """Хранение каталога в SQLite. База создаётся при первом запуске."""
 import json
 import sqlite3
+import shutil
+import uuid
 from pathlib import Path
 
 DB_PATH = Path(__file__).with_name("materials.db")
 JSON_PATH = Path(__file__).with_name("materials.json")
+UPLOAD_DIR = Path(__file__).with_name("uploads")
 DEMO = [
     ("Основы Python", "книга"),
     ("Практические задания по Python", "методичка"),
@@ -23,8 +26,12 @@ def initialize():
         con.execute("""CREATE TABLE IF NOT EXISTS materials (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
-            type TEXT NOT NULL
+            type TEXT NOT NULL,
+            file_path TEXT
         )""")
+        columns = [row[1] for row in con.execute("PRAGMA table_info(materials)")]
+        if "file_path" not in columns:
+            con.execute("ALTER TABLE materials ADD COLUMN file_path TEXT")
         count = con.execute("SELECT COUNT(*) FROM materials").fetchone()[0]
         if count:
             return
@@ -43,7 +50,7 @@ def initialize():
 
 
 def get_materials(search="", category="", sort=False):
-    sql = "SELECT id, title, type FROM materials WHERE title LIKE ?"
+    sql = "SELECT id, title, type, file_path FROM materials WHERE title LIKE ?"
     params = ["%" + search + "%"]
     if category:
         sql += " AND type = ?"
@@ -91,3 +98,30 @@ def statistics():
             "SELECT type, COUNT(*) AS amount FROM materials GROUP BY type ORDER BY type"
         ).fetchall()
     return total, [(row["type"], row["amount"]) for row in groups]
+
+
+def attach_file(source, title, category):
+    """Копирует файл в uploads и добавляет запись в SQLite."""
+    source = Path(source)
+    if not source.is_file():
+        raise ValueError("Файл не найден.")
+    if not title.strip() or not category.strip():
+        raise ValueError("Название и тип не могут быть пустыми.")
+    UPLOAD_DIR.mkdir(exist_ok=True)
+    target = UPLOAD_DIR / (uuid.uuid4().hex + source.suffix)
+    shutil.copy2(source, target)
+    try:
+        with connect() as con:
+            return con.execute(
+                "INSERT INTO materials(title, type, file_path) VALUES (?, ?, ?)",
+                (title.strip(), category.strip(), str(target)),
+            ).lastrowid
+    except Exception:
+        target.unlink(missing_ok=True)
+        raise
+
+
+def get_file(material_id):
+    with connect() as con:
+        row = con.execute("SELECT file_path FROM materials WHERE id = ?", (material_id,)).fetchone()
+    return Path(row["file_path"]) if row and row["file_path"] else None
