@@ -1,89 +1,89 @@
-materials = {
-    1: {"title": "Основы Python", "type": "книга"},
-    2: {"title": "Практические задания по Python", "type": "методичка"},
-    3: {"title": "Основы алгоритмизации", "type": "книга"},
-}
+"""Консольная версия каталога, использующая общую базу SQLite."""
+import catalog_db as db
 
 
 def show_all():
-    for item_id, item in materials.items():
-        print(f"{item_id}. {item['title']} ({item['type']})")
+    rows = db.get_materials()
+    if not rows:
+        print("Каталог пуст.")
+    for item in rows:
+        print(f"{item['id']}. {item['title']} ({item['type']})")
+
+
+def read_id():
+    try:
+        material_id = int(input("Введите ID материала: "))
+        if material_id <= 0:
+            raise ValueError
+        return material_id
+    except ValueError:
+        print("Ошибка: введите положительный целый ID.")
+        return None
 
 
 def show_by_id():
-    try:
-        material_id = int(input("Введите ID материала: "))
-    except ValueError:
-        print("Ошибка: введите целое число.")
+    material_id = read_id()
+    if material_id is None:
         return
-
-    if material_id <= 0:
-        print("Ошибка: ID должен быть положительным.")
-        return
-
-    material = materials.get(material_id)
-    if material is None:
+    item = next((row for row in db.get_materials() if row["id"] == material_id), None)
+    if item is None:
         print("Материал не найден.")
     else:
-        print(f"ID: {material_id}")
-        print(f"Название: {material['title']}")
-        print(f"Тип: {material['type']}")
+        print(f"ID: {item['id']}")
+        print(f"Название: {item['title']}")
+        print(f"Тип: {item['type']}")
+        print(f"Файл: {item['file_path'] or 'не прикреплён'}")
 
 
 def search_by_title():
-    query = input("Введите название: ").strip().lower()
+    query = input("Введите название: ").strip()
     if not query:
         print("Введите название для поиска.")
         return
-
-    found = False
-    for item_id, item in materials.items():
-        if query in item["title"].lower():
-            print(f"{item_id}. {item['title']} ({item['type']})")
-            found = True
-
-    if not found:
+    rows = db.get_materials(search=query)
+    if not rows:
         print("Материалы не найдены.")
+    for item in rows:
+        print(f"{item['id']}. {item['title']} ({item['type']})")
 
 
 def add_material():
     title = input("Название материала: ").strip()
-    if not title:
-        print("Название не может быть пустым.")
-        return
-
     material_type = input("Тип материала: ").strip()
-    if not material_type:
-        print("Тип не может быть пустым.")
-        return
-
-    new_id = max(materials, default=0) + 1
-    materials[new_id] = {"title": title, "type": material_type}
-    print(f"Материал добавлен. ID: {new_id}")
+    try:
+        new_id = db.add_material(title, material_type)
+        print(f"Материал добавлен. ID: {new_id}")
+    except ValueError as error:
+        print(error)
 
 
 def edit_material():
-    try:
-        material_id = int(input("Введите ID материала: "))
-    except ValueError:
-        print("Ошибка: введите целое число.")
+    material_id = read_id()
+    if material_id is None:
         return
-
-    if material_id not in materials:
-        print("Материал не найден.")
-        return
-
     title = input("Новое название: ").strip()
     material_type = input("Новый тип: ").strip()
-    if not title or not material_type:
-        print("Название и тип не могут быть пустыми.")
-        return
+    try:
+        if db.edit_material(material_id, title, material_type):
+            print("Материал изменён.")
+        else:
+            print("Материал не найден.")
+    except ValueError as error:
+        print(error)
 
-    materials[material_id] = {"title": title, "type": material_type}
-    print("Материал изменён.")
+
+def delete_material():
+    material_id = read_id()
+    if material_id is None:
+        return
+    if db.delete_material(material_id):
+        print("Материал удалён.")
+    else:
+        print("Материал не найден.")
 
 
 def main():
+    db.initialize()
     while True:
         print("\nКаталог учебных материалов")
         print("-" * 30)
@@ -92,8 +92,8 @@ def main():
         print("3 - Поиск по названию")
         print("4 - Добавить материал")
         print("5 - Редактировать материал")
+        print("6 - Удалить материал")
         print("0 - Выход")
-
         choice = input("Выберите действие: ").strip()
         if choice == "1":
             show_all()
@@ -105,6 +105,8 @@ def main():
             add_material()
         elif choice == "5":
             edit_material()
+        elif choice == "6":
+            delete_material()
         elif choice == "0":
             print("До свидания!")
             break
